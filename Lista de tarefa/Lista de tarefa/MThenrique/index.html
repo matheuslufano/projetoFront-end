@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LISTA TODO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2 class="mt-1">CREATE TO DO</h2>
+    <div id="todos" class="mb-4"></div>
+    <form id="cadastroForm" class="mb-4">
+        <div class="mb-3">
+            <label for="name" class="form-label">Nome:</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Descrição:</label>
+            <input type="text" id="description" name="description" class="form-control" required>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" id="status" name="status" class="form-check-input">
+            <label for="status" class="form-check-label">Já Concluída?</label>
+        </div>
+
+        <input type="submit" value="Enviar" class="btn btn-primary">
+    </form>
+    <div class="mb-4">
+        <h2 class="mt-1">Deletar TODO</h2>
+        <label for="todoID">ID do TODO:</label>
+        <input type="text" id="todoID" name="todoID">
+        <button class="btn btn-danger btn-sm" onclick="deletarTodo()">Excluir</button>
+
+        <h2 class="mt-1">Concluir TODO</h2>
+        <label for="conID">ID do TODO:</label>
+        <input type="text" id="conID" name="conID">
+        <button class="btn btn-success btn-sm" onclick="concluirTodo()">Concluir</button>
+    </div>
+    <table class="table table-striped mt-3">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Descrição</th>
+            <th scope="col">Status</th>
+        </tr>
+        </thead>
+        <tbody id="lista-todo">
+        </tbody>
+    </table>
+
+</div>
+<script>
+    function concluirTodo() {
+        const conID = document.getElementById('conID').value;
+
+        if (!conID) {
+            console.error('Por favor, insira um ID de TODO válido.');
+            return;
+        }
+
+        fetch(`http://localhost:8080/mudar_status/${conID}`, {
+            method: 'PUT',
+        })
+            .then(response => {
+                if (response.ok) {
+                    console.log(`TODO com ID ${conID} deletado com sucesso.`);
+                    alert(`TODO com ID ${conID} deletado com sucesso.`);
+                    fetchTodoList();
+                } else {
+                    console.error(`Erro ao deletar TODO com ID ${conID}: ${response.statusText}`);
+                    alert(`Erro ao deletar TODO com ID ${conID}: ${response.statusText}`);
+                }
+            })
+            .catch(error => console.error('Erro ao deletar TODO:', error));
+    }
+</script>
+<script>
+    function deletarTodo() {
+        const todoID = document.getElementById('todoID').value;
+
+        if (!todoID) {
+            console.error('Por favor, insira um ID de usuário válido.');
+            return;
+        }
+
+        fetch(`http://localhost:8080/todo/${todoID}`, {
+            method: 'DELETE',
+        })
+            .then(response => {
+                if (response.ok) {
+                    console.log(`TODO com ID ${todoID} deletado com sucesso.`);
+                    alert(`TODO com ID ${todoID} deletado com sucesso.`);
+                    fetchTodoList();
+                } else {
+                    console.error(`Erro ao deletar TODO com ID ${todoID}: ${response.statusText}`);
+                    alert(`Erro ao deletar TODO com ID ${todoID}: ${response.statusText}`);
+                }
+            })
+            .catch(error => console.error('Erro ao deletar TODO:', error));
+    }
+</script>
+<script>
+    document.getElementById("cadastroForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const formData = {
+            nome: document.getElementById('name').value,
+            descricao: document.getElementById('description').value,
+            status: document.getElementById('status').checked
+        };
+
+        const url = "http://127.0.0.1:5000/criar";
+        const options = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(formData)
+        };
+
+        fetch(url, options)
+            .then(response => {
+                if (response.ok) {
+                    alert("TODO cadastrado com sucesso!");
+                    document.getElementById("cadastroForm").reset();
+                    fetchTodoList();
+                } else {
+                    alert("Erro ao cadastrar TODO. Consulte o console para mais detalhes.");
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao enviar requisição:", error);
+                alert("Erro ao cadastrar TODO. Consulte o console para mais detalhes.");
+            });
+    });
+
+    function fetchTodoList() {
+        fetch('http://127.0.0.1:5000/listar')
+            .then(response => response.json())
+            .then(data => {
+                const listaTodo = document.getElementById('lista-todo');
+                listaTodo.innerHTML = "";
+                data.forEach(todo => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <th scope="row">${todo.id}</th>
+                        <td>${todo.nome}</td>
+                        <td>${todo.descricao}</td>
+                        <td>${todo.status ? 'Concluído' : 'Pendente'}</td>
+                    `;
+                    if (todo.Status) {
+                        row.classList.add('table-success');
+                    } else {
+                        row.classList.add('table-danger');
+                    }
+                    listaTodo.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Erro ao obter dados dos TODO:', error));
+    }
+    fetchTodoList();
+</script>
+</body>
+</html>
